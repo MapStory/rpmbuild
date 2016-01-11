@@ -1,107 +1,71 @@
-wget https://s3.amazonaws.com/garnertb-share/geoserver.war
-#download git repos
-mkdir mapstory
-pushd mapstory
-git clone git://github.com/MapStory/geonode.git
-git clone git://github.com/MapStory/mapstory-geonode.git
-mkdir pkgs && pushd pkgs
-git clone git://github.com/pinax/django-mailer.git
-git clone git://github.com/MapStory/django-maploom.git
-git clone git://github.com/MapStory/icon-commons.git
-#download modules
-wget https://pypi.python.org/packages/source/a/amqp/amqp-1.4.7.tar.gz
-wget https://pypi.python.org/packages/source/a/anyjson/anyjson-0.3.3.tar.gz
-wget https://pypi.python.org/packages/source/a/awesome-slugify/awesome-slugify-1.6.2.tar.gz
-wget https://pypi.python.org/packages/source/b/beautifulsoup4/beautifulsoup4-4.2.1.tar.gz
-wget https://pypi.python.org/packages/source/b/billiard/billiard-3.3.0.21.tar.gz
-wget https://pypi.python.org/packages/source/c/celery/celery-3.1.17.tar.gz
-wget https://pypi.python.org/packages/source/d/dj.paste/dj.paste-1.14.zip
-wget https://pypi.python.org/packages/source/D/Django/Django-1.6.10.tar.gz
-wget https://pypi.python.org/packages/source/d/django-activity-stream/django-activity-stream-0.4.5beta1.tar.gz
-wget https://pypi.python.org/packages/source/d/django-appconf/django-appconf-0.5.tar.gz
-wget https://pypi.python.org/packages/source/d/django-autocomplete-light/django-autocomplete-light-1.4.14.tar.gz
-wget https://pypi.python.org/packages/source/d/django-bootstrap3-datetimepicker/django-bootstrap3-datetimepicker-2.2.3.tar.gz
-wget https://pypi.python.org/packages/source/d/django-celery/django-celery-3.1.16.tar.gz
-wget https://pypi.python.org/packages/source/d/django-downloadview/django-downloadview-1.2.zip
-wget https://pypi.python.org/packages/source/d/django-extensions/django-extensions-1.2.5.tar.gz
-wget https://pypi.python.org/packages/source/d/django-forms-bootstrap/django-forms-bootstrap-3.0.1.tar.gz
-wget https://pypi.python.org/packages/source/d/django-friendly-tag-loader/django-friendly-tag-loader-1.1.zip
-wget https://pypi.python.org/packages/source/d/django-geoexplorer/django-geoexplorer-4.0.5.tar.gz
-wget https://pypi.python.org/packages/source/d/django-guardian/django-guardian-1.2.0.tar.gz
-wget https://pypi.python.org/packages/source/d/django-haystack/django-haystack-2.4.0.tar.gz
-wget https://pypi.python.org/packages/source/d/django-jsonfield/django-jsonfield-0.9.12.tar.gz
-wget https://pypi.python.org/packages/source/d/django-leaflet/django-leaflet-0.13.7.zip
-wget https://pypi.python.org/packages/source/d/django-modeltranslation/django-modeltranslation-0.8.tar.gz
-wget https://pypi.python.org/packages/source/d/django-mptt/django-mptt-0.6.1.tar.gz
-wget https://pypi.python.org/packages/source/d/django-nose/django-nose-1.2.tar.gz
-wget https://pypi.python.org/packages/source/d/django-oauth2-provider/django-oauth2-provider-0.2.6.1.tar.gz
-wget https://pypi.python.org/packages/source/d/django-pagination/django-pagination-1.0.5.tar.gz
-wget https://pypi.python.org/packages/source/d/django_polymorphic/django_polymorphic-0.5.6.tar.gz
-wget https://pypi.python.org/packages/source/d/django-slack/django-slack-4.1.0.tar.gz
-wget https://pypi.python.org/packages/source/d/django-social-auth/django-social-auth-0.7.22.tar.gz
-wget https://pypi.python.org/packages/source/d/django-taggit/django-taggit-0.12.tar.gz
-wget https://pypi.python.org/packages/source/d/django-tastypie/django-tastypie-0.11.0.tar.gz
-wget https://pypi.python.org/packages/source/d/docutils/docutils-0.12.tar.gz
-wget https://pypi.python.org/packages/source/e/elasticsearch/elasticsearch-1.6.0.tar.gz
-wget https://pypi.python.org/packages/source/f/flake8/flake8-2.3.0.tar.gz
-wget https://pypi.python.org/packages/source/G/GDAL/GDAL-1.11.2.tar.gz
-wget https://pypi.python.org/packages/source/g/geolinks/geolinks-0.0.1.tar.gz
-wget https://pypi.python.org/packages/source/g/geonode-agon-ratings/geonode-agon-ratings-0.3.1.tar.gz
-wget https://pypi.python.org/packages/source/g/geonode-announcements/geonode-announcements-1.0.5.tar.gz
-wget https://pypi.python.org/packages/source/g/geonode-arcrest/geonode-arcrest-10.2.tar.gz
-wget https://pypi.python.org/packages/source/g/geonode-avatar/geonode-avatar-2.1.4.tar.gz
-wget https://pypi.python.org/packages/source/g/geonode-dialogos/geonode-dialogos-0.4.tar.gz
-wget https://pypi.python.org/packages/source/g/geonode-notification/geonode-notification-1.1.1.tar.gz
-wget https://pypi.python.org/packages/source/g/geonode-user-accounts/geonode-user-accounts-1.0.10.tar.gz
-wget https://pypi.python.org/packages/source/g/geonode-user-messages/geonode-user-messages-0.1.2.tar.gz
-wget https://pypi.python.org/packages/source/g/gisdata/gisdata-0.5.4.tar.gz
-wget https://pypi.python.org/packages/source/g/gsconfig/gsconfig-0.6.13.tar.gz
-wget https://pypi.python.org/packages/source/g/gsimporter/gsimporter-0.1.tar.gz
-wget https://pypi.python.org/packages/source/h/httplib2/httplib2-0.8.tar.gz
-wget https://pypi.python.org/packages/source/k/kombu/kombu-3.0.29.tar.gz
-wget https://pypi.python.org/packages/source/l/lockfile/lockfile-0.11.0.tar.gz
-wget https://pypi.python.org/packages/source/l/lxml/lxml-3.3.3.tar.gz
-wget https://pypi.python.org/packages/source/m/mailer/mailer-0.8.1.zip
-wget https://pypi.python.org/packages/source/m/mccabe/mccabe-0.3.1.tar.gz
-wget https://pypi.python.org/packages/source/m/meld3/meld3-1.0.2.tar.gz
-wget https://pypi.python.org/packages/source/M/MultipartPostHandler/MultipartPostHandler-0.1.0.tar.gz
-wget https://pypi.python.org/packages/source/n/nose/nose-1.0.0.tar.gz
-wget https://pypi.python.org/packages/source/n/numpy/numpy-1.8.2.tar.gz
-wget https://pypi.python.org/packages/source/o/oauth2/oauth2-1.5.211.tar.gz
-wget https://pypi.python.org/packages/source/O/OWSLib/OWSLib-0.8.10.tar.gz
-wget https://pypi.python.org/packages/source/P/Paste/Paste-1.7.5.1.tar.gz
-wget https://pypi.python.org/packages/source/P/PasteDeploy/PasteDeploy-1.5.2.tar.gz
-wget https://pypi.python.org/packages/source/P/PasteScript/PasteScript-1.7.5.tar.gz
-wget https://pypi.python.org/packages/source/P/Paver/Paver-1.2.1.tar.gz
-wget https://pypi.python.org/packages/source/p/pbr/pbr-0.11.0.tar.gz
-wget https://pypi.python.org/packages/source/p/pep8/pep8-1.6.2.tar.gz
-wget https://pypi.python.org/packages/source/P/Pillow/Pillow-2.3.0.zip
-wget https://pypi.python.org/packages/source/p/pinax-theme-bootstrap/pinax-theme-bootstrap-3.0a11.tar.gz
-wget https://pypi.python.org/packages/source/p/pinax-theme-bootstrap-account/pinax-theme-bootstrap-account-1.0b2.tar.gz
-wget https://pypi.python.org/packages/source/p/psycopg2/psycopg2-2.4.5.tar.gz
-wget https://pypi.python.org/packages/source/p/pycsw/pycsw-1.10.0.tar.gz
-wget https://pypi.python.org/packages/source/p/pyelasticsearch/pyelasticsearch-0.6.1.tar.gz
-wget https://pypi.python.org/packages/source/p/pyflakes/pyflakes-1.0.0.tar.gz
-wget https://pypi.python.org/packages/source/P/Pygments/Pygments-2.0.2.tar.gz
-wget https://pypi.python.org/packages/source/p/pyproj/pyproj-1.9.3.tar.gz
-wget https://pypi.python.org/packages/source/p/python-dateutil/python-dateutil-2.4.2.tar.gz
-wget https://pypi.python.org/packages/source/p/python-mimeparse/python-mimeparse-0.1.4.tar.gz
-wget https://pypi.python.org/packages/source/p/python-openid/python-openid-2.2.5.tar.gz
-wget https://pypi.python.org/packages/source/p/pytz/pytz-2015.7.tar.gz
-wget https://pypi.python.org/packages/source/r/regex/regex-2015.10.29.tar.gz
-wget https://pypi.python.org/packages/source/r/requests/requests-2.2.1.tar.gz
-wget https://pypi.python.org/packages/source/S/Shapely/Shapely-1.3.1.tar.gz
-wget https://pypi.python.org/packages/source/s/shortuuid/shortuuid-0.4.2.tar.gz
-wget https://pypi.python.org/packages/source/s/simplejson/simplejson-3.3.1.tar.gz
-wget https://pypi.python.org/packages/source/s/six/six-1.10.0.tar.gz
-wget https://pypi.python.org/packages/source/s/supervisor/supervisor-3.1.3.tar.gz
-wget https://pypi.python.org/packages/source/T/Tempita/Tempita-0.5.2.tar.gz
-wget https://pypi.python.org/packages/source/t/textile/textile-2.2.2.tar.gz
-wget https://pypi.python.org/packages/source/t/transifex-client/transifex-client-0.10.tar.gz
-wget https://pypi.python.org/packages/source/U/Unidecode/Unidecode-0.04.18.tar.gz
-wget https://pypi.python.org/packages/source/u/urllib3/urllib3-1.12.tar.gz
-wget https://pypi.python.org/packages/source/u/uWSGI/uwsgi-1.9.17.1.tar.gz
-wget https://pypi.python.org/packages/source/W/WebError/WebError-0.11.tar.gz
-wget https://pypi.python.org/packages/source/W/WebOb/WebOb-1.5.0.tar.gz
-popd && popd
+#!/bin/bash
+
+echo 'downloading sources'
+echo '-------------------'
+srcs=()
+srcs+=("http://yum.geoshape.org/src/Python-2.7.10.tgz")
+srcs+=("http://yum.geoshape.org/src/geoserver.war")
+srcs+=("http://yum.geoshape.org/src/geoserver_data-geogig_od3.zip")
+srcs+=("http://yum.geoshape.org/src/geogig-cli-app-1.0.zip")
+srcs+=("http://yum.geoshape.org/src/setuptools-18.7.1.tar.gz")
+srcs+=("http://yum.geoshape.org/src/virtualenv-13.1.0.tar.gz")
+for src in "${srcs[@]}"
+do
+  filename=`echo $src | sed 's/.*\///'`
+  if [[ ! -f $filename ]]
+  then
+    wget $src
+  else
+    echo $filename "already downloaded"
+  fi
+done
+[ ! -d pkgs ] && mkdir pkgs
+pushd pkgs
+while read line;
+do
+  name=`echo $line | awk -F '==' '{print $1}'`
+  version=`echo $line | awk -F '==' '{print $2}'`
+  base="https://pypi.python.org/packages/source"
+  name_lc=`echo $name | tr '[:upper:]' '[:lower:]'`
+  loop=1
+  for ext in {.tar.gz,.zip}
+  do
+    urls=()
+    urls+=("${base}/${name:0:1}/${name}/${name}-${version}${ext}")
+    # substitute a char with alpha in version variable
+    urls+=("${base}/${name:0:1}/${name}/${name}-${version//a/alpha}${ext}")
+    # substitute b char with beta in version variable
+    urls+=("${base}/${name:0:1}/${name}/${name}-${version//b/beta}${ext}")
+    # modify name variable to lowercase
+    urls+=("${base}/${name:0:1}/${name}/${name_lc}-${version}${ext}")
+    # substitute hypens with undrscores in name variable
+    urls+=("${base}/${name:0:1}/${name//-/_}/${name//-/_}-${version}${ext}")
+    # pad version variable with a 0.0 for Unidecode
+    urls+=("${base}/${name:0:1}/${name}/${name}-${version//0./0.0}${ext}")
+    for url in "${urls[@]}"
+    do
+      filename=`echo $url | sed 's/.*\///'`
+      if [[ `wget -S --spider $url  2>&1 | grep 'HTTP/1.1 200 OK'` ]]
+      then
+        if [[ ! -f $filename ]]
+        then
+          wget $url
+          loop=0
+          break
+        else
+          echo $filename "already downloaded"
+          loop=0
+          break
+        fi
+      fi
+    done
+    [ $loop -eq 0 ] && break
+  done
+  [ $loop -eq 1 ] && echo $name-$version "not found" >> missing-packages.txt
+done < ../requirements.txt
+cp -f geoshape-* ..
+popd
+[ -f pkgs.zip ] && rm -f pkgs.zip
+zip -r pkgs.zip pkgs -x "*.DS_Store"
+echo '-------------------'
 echo 'finished get sources'
