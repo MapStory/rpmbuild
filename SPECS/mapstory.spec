@@ -1,5 +1,5 @@
 # GitHub Short Commit Hash for mapstory-geonode and geonode clone
-%define mapstory_commit fdac304
+%define mapstory_commit 4ee4a06
 # https://github.com/MapStory/mapstory-geonode.git
 
 %define geonode_commit 24f5b40
@@ -8,7 +8,7 @@
 # Define Constants
 %define name mapstory
 %define version 0.0
-%define release 4.%{mapstory_commit}.%{geonode_commit}%{?dist}
+%define release 2.%{mapstory_commit}.%{geonode_commit}%{?dist}
 %define _unpackaged_files_terminate_build 0
 %define __os_install_post %{nil}
 %define _rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm
@@ -277,5 +277,9 @@ fi
 %{_prefix}/bin/%{name}-django
 
 %changelog
+* Thu Jan 28 2016 BerryDaniel <dberry@boundlessgeo.com> [0.0-2]
+- updated cert to -sha256 in mapstory-config
+- added proj-nad and proj-epsg dependency
+
 * Fri Jan 22 2016 BerryDaniel <dberry@boundlessgeo.com> [0.0-1]
 - Updated to 0.0
