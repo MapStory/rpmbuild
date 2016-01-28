@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ "$EUID" -ne 0 ]
+  then echo "mapstory-django requires root user access"
+  exit
+fi
+
+set -e
+. /var/lib/geonode/bin/activate
+cd /var/lib/geonode/mapstory-geonode
+python manage.py $@

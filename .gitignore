@@ -16,7 +16,6 @@ __pycache__/
 # RPM SOURCES
 *.tgz
 *.gz
-*.zip
 *.war
 
 # RPM TEMP DIRS

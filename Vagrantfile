@@ -7,6 +7,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision :shell, path: "bootstrap.sh"
   config.vm.network :private_network, ip: "192.168.99.110"
   config.vm.provider :virtualbox do |vb|
-    vb.customize ["modifyvm", :id, "--name", "geoshape-centos", "--memory", "4000"]
+    vb.customize ["modifyvm", :id, "--name", "mapstory-rpm-centos", "--memory", "4000"]
   end
 end
+
+

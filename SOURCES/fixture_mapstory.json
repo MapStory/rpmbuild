@@ -1,0 +1,61 @@
+[
+    {
+        "fields": {
+            "name": "skills",
+            "subtitle": "",
+            "title": "Get Skills"
+        },
+        "model": "mapstory.getpage",
+        "pk": 1
+    },
+    {
+        "fields": {
+            "name": "started",
+            "subtitle": "",
+            "title": "Get Started"
+        },
+        "model": "mapstory.getpage",
+        "pk": 2
+    },
+    {
+        "fields": {
+            "name": "involved",
+            "subtitle": "",
+            "title": "Get Involved"
+        },
+        "model": "mapstory.getpage",
+        "pk": 3
+    },
+    {
+        "fields": {
+            "image": "parallax/africa.gif",
+            "name": "Africa"
+        },
+        "model": "mapstory.parallaximage",
+        "pk": 1
+    },
+    {
+        "fields": {
+            "image": "parallax/Parallax1.gif",
+            "name": "Parallax1"
+        },
+        "model": "mapstory.parallaximage",
+        "pk": 2
+    },
+    {
+        "fields": {
+            "image": "parallax/Parallax2.gif",
+            "name": "Parallax2"
+        },
+        "model": "mapstory.parallaximage",
+        "pk": 3
+    },
+    {
+        "fields": {
+            "image": "parallax/Parallax3.gif",
+            "name": "Parallax3"
+        },
+        "model": "mapstory.parallaximage",
+        "pk": 4
+    }
+]

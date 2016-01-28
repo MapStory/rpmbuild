@@ -1,0 +1,453 @@
+#!/bin/bash
+
+if [ "$EUID" -ne 0 ]
+  then echo "mapstory-config requires root user access"
+  exit
+fi
+
+usage ()
+{
+  echo 'Usage:'
+  echo '        mapstory-config database'
+  echo '        mapstory-config selinux'
+  echo '        mapstory-config updateip <public ip or domain>'
+  echo '        mapstory-config updatelayers'
+  echo '        mapstory-config rebuild_index'
+  echo '        mapstory-config syncdb'
+  echo '        mapstory-config elastic'
+  echo '        mapstory-config rabbitmq'
+  echo '        mapstory-config collectstatic'
+  echo '        mapstory-config changepassword <username>'
+  echo '        mapstory-config createsuperuser'
+  echo '        mapstory-config start_all'
+  echo '            restarts all MapStory services'
+  echo '        mapstory-config stop_all'
+  echo '            stops all MapStory services'
+  echo '        mapstory-config init <ip or domain>'
+  echo '            chains together ssl, database, django, updateip,'
+  echo '            collectstatic, syncdb, selinux, start_all,'
+  echo '            updatelayers, rebuildindex and createsuperuser'
+  echo '        mapstory-config maploom_dev'
+  echo '            modify geonode to point to the a build of maploom'
+  echo '            on the host machine to speedup the edit-build-test'
+  echo '            cycle of maploom'
+  echo '        mapstory-config ssl <public ip or domain>'
+  exit
+}
+
+# global values
+OPTIONS="$#"
+ARG="$1"
+VAR="$2"
+CHAR="[:alnum:]"
+IS_REPLACE=0
+MAPSTORY_ETC=/etc/mapstory
+GEOSERVER_DATA_DIR=/var/lib/geoserver_data
+KEYSTORE=/etc/pki/java/cacerts
+CONFIG=/etc/mapstory/mapstory-config.conf
+
+database()
+{
+  echo "********"
+  echo "Configuring PostgreSQL/PostGIS"
+  echo "********"
+  if [ ! -d /var/lib/pgsql/9.5/data/base ]; then
+    service postgresql-9.5 initdb
+    chkconfig postgresql-9.5 on
+  fi
+  if [ ! -f /var/lib/pgsql/9.5/data/pg_hba.conf.mapstory_bak ]; then
+    cp /var/lib/pgsql/9.5/data/pg_hba.conf /var/lib/pgsql/9.5/data/pg_hba.conf.mapstory_bak
+  fi
+  echo "local   all             all                                     trust" > /var/lib/pgsql/9.5/data/pg_hba.conf
+  echo "host    all             all             0.0.0.0/0               trust" >> /var/lib/pgsql/9.5/data/pg_hba.conf
+  echo "host    all             all             127.0.0.1/32            md5" >> /var/lib/pgsql/9.5/data/pg_hba.conf
+  echo "host    all             all             ::1/128                 md5" >> /var/lib/pgsql/9.5/data/pg_hba.conf
+  if [ ! -f /var/lib/pgsql/9.5/data/postgresql.conf.mapstory_bak ]; then
+    cp /var/lib/pgsql/9.5/data/postgresql.conf /var/lib/pgsql/9.5/data/postgresql.conf.mapstory_bak
+  fi
+  sed -i "s|#listen_addresses =|listen_addresses =|" /var/lib/pgsql/9.5/data/postgresql.conf
+  sed -i "s|#port =|port =|" /var/lib/pgsql/9.5/data/postgresql.conf
+  sed -i "s|#unix_socket_directories =|unix_socket_directories =|" /var/lib/pgsql/9.5/data/postgresql.conf
+  service postgresql-9.5 restart > /dev/null 2>&1
+  PGUSER=$(psql -U postgres -c '\du' | cut -d \| -f 1 | grep -w mapstory | wc -l)
+  if [ $PGUSER == 0 ]
+  then
+    psql -U postgres -c "CREATE USER mapstory WITH PASSWORD 'foobar';"
+  else
+    psql -U postgres -c "ALTER USER mapstory WITH PASSWORD 'foobar';"
+  fi
+  MAPSTORY_DB=$(psql -U postgres -lqt | cut -d \| -f 1 | grep -w mapstory | wc -l)
+  if [ $MAPSTORY_DB == 0 ]
+  then
+    psql -U postgres -c "create database mapstory with owner mapstory encoding 'UTF-8' lc_collate 'en_US.UTF-8' lc_ctype 'en_US.UTF-8'  template template0;"
+    psql -U postgres -d mapstory -c "create domain bigdate as bigint"
+    psql -U postgres -d mapstory -c "CREATE EXTENSION dblink"
+    psql -U postgres -d mapstory -f /var/lib/geonode/scripts/geonode_authorize_layer.sql > /dev/null 2>&1
+  else
+    echo "mapstory database already created"
+  fi
+  MAPSTORY_DATA_DB=$(psql -U postgres -lqt | cut -d \| -f 1 | grep -w mapstory_data | wc -l)
+  if [ $MAPSTORY_DATA_DB == 0 ]
+  then
+    psql -U postgres -c "create database mapstory_data with owner mapstory encoding 'UTF-8' lc_collate 'en_US.UTF-8' lc_ctype 'en_US.UTF-8'  template template0;"
+    psql -U postgres -d mapstory_data -c "create domain bigdate as bigint"
+    psql -U postgres -d mapstory_data -c "CREATE EXTENSION dblink"
+    psql -U postgres -d mapstory_data -c "CREATE EXTENSION postgis"
+    psql -U postgres -d mapstory_data -c "GRANT ALL ON geometry_columns TO PUBLIC;"
+    psql -U postgres -d mapstory_data -c "GRANT ALL ON spatial_ref_sys TO PUBLIC;"
+  else
+    echo "mapstory_data database already created"
+  fi
+}
+
+django()
+{
+  echo "********"
+  echo "Generating Django Secret Key"
+  echo "********"
+  secretkey=$(cat /dev/urandom | tr -cd "$CHAR" | head -c ${1:-32})
+  sed -i "s@\(SECRET_KEY[  ]*=[  ]*\).*@\1\'$secretkey'@g" $MAPSTORY_ETC/local_settings.py
+}
+
+selinux()
+{
+  echo "********"
+  echo "Configuring SELinux"
+  echo "********"
+  iptables -I INPUT -p tcp --dport 80 -j ACCEPT
+  iptables -I INPUT -p tcp --dport 443 -j ACCEPT
+  service iptables save
+  setsebool -P httpd_can_network_connect=1 httpd_can_network_connect_db=1
+  service iptables restart > /dev/null 2>&1
+  service httpd restart > /dev/null 2>&1
+}
+
+elastic()
+{
+  echo "********"
+  echo "Configuring ElasticSearch"
+  echo "********"
+  echo -e "ES_HEAP_SIZE=512m\nMAX_OPEN_FILES=65535\nMAX_LOCKED_MEMORY=unlimited" > /etc/sysconfig/elasticsearch
+
+  if [ ! -f /etc/security/limits.conf.mapstory_bak ]; then
+    cp /etc/security/limits.conf /etc/security/limits.conf.mapstory_bak
+    echo -e "elasticsearch - nofile 65535\nelasticsearch - memlock unlimited" >> /etc/security/limits.conf
+  fi
+  /sbin/sysctl -p
+
+  sed -i "s|#bootstrap.mlockall|bootstrap.mlockall|" /etc/elasticsearch/elasticsearch.yml
+
+  #if [ ! -f /etc/elasticsearch/elasticsearch.yml.mapstory_bak ]; then
+    #cp /etc/elasticsearch/elasticsearch.yml /etc/elasticsearch/elasticsearch.yml.mapstory_bak
+    #echo -e "network.bind_host: 127.0.0.1\nscript.disable_dynamic: true\nbootstrap.mlockall: true" > /etc/elasticsearch/elasticsearch.yml
+  #fi
+  /var/lib/geonode/bin/supervisorctl restart mapstory:elasticsearch > /dev/null 2>&1
+}
+
+rabbitmq()
+{
+  echo "********"
+  echo "Configuring RabbitMQ"
+  echo "********"
+  service rabbitmq-server restart > /dev/null 2>&1
+  rabbitmq-plugins enable rabbitmq_management
+  service rabbitmq-server restart > /dev/null 2>&1
+  rabbitmqctl add_vhost mapstory
+  rabbitmqctl add_user mapstory password
+  rabbitmqctl set_permissions -p mapstory mapstory ".*" ".*" ".*"
+}
+
+syncdb()
+{
+  echo "********"
+  echo "Synchronizing Django Database"
+  echo "********"
+  mapstory-django syncdb --noinput
+}
+
+collectstatic()
+{
+  echo "********"
+  echo "Collecting Django Static Files"
+  echo "********"
+  mapstory-django collectstatic --noinput
+}
+
+changepassword()
+{
+  echo "Changing Django User Password"
+  echo "********"
+  if [ $ARG == "init" ]
+  then
+    mapstory-django changepassword admin
+  else
+    USER="$VAR"
+    mapstory-django changepassword $USER
+  fi
+}
+
+createsuperuser()
+{
+  echo "Creating django/mapstory superuser"
+  mapstory-django createsuperuser
+}
+
+updateip()
+{
+  echo "********"
+  echo "Updating IP Address"
+  echo "********"
+  NEWIP="$VAR"
+  sed -i "s@\(SITEURL[  ]*=[  ]*\).*@\1\'https://$NEWIP\/'@g" $MAPSTORY_ETC/local_settings.py
+  sed -i "s@\(SESSION_COOKIE_DOMAIN[  ]*=[  ]*\).*@\1\'$NEWIP'@g" $MAPSTORY_ETC/local_settings.py
+  printing_config=$GEOSERVER_DATA_DIR/printing/config.yaml
+  if grep -qv "$NEWIP" "$printing_config"
+  then
+      sed -i "s#hosts:#hosts:\n  - !ipMatch\n    ip: $NEWIP#g" $printing_config
+  fi
+}
+
+updatelayers()
+{
+  echo "********"
+  echo "Updating MapStory Layers"
+  echo "********"
+  mapstory-django updatelayers --ignore-errors --remove-deleted --skip-unadvertised
+}
+
+rebuild_index()
+{
+  echo "********"
+  echo "Rebuilding MapStory Index"
+  echo "********"
+  mapstory-django rebuild_index --noinput
+}
+
+start_all()
+{
+  echo "********"
+  echo "Starting MapStory Services"
+  echo "********"
+  chkconfig tomcat8 on
+  echo "Starting tomcat8 service"
+  service tomcat8 stop > /dev/null 2>&1
+  sleep 2
+  service tomcat8 start
+  chkconfig rabbitmq-server on
+  echo "Starting rabbitmq-server service"
+  service rabbitmq-server stop > /dev/null 2>&1
+  sleep 2
+  service rabbitmq-server start
+  chkconfig mapstory on
+  echo "Starting mapstory service"
+  service mapstory stop > /dev/null 2>&1
+  sleep 2
+  service mapstory start
+  chkconfig httpd on
+  echo "Starting httpd service"
+  service httpd stop > /dev/null 2>&1
+  sleep 2
+  service httpd start
+}
+
+stop_all()
+{
+  echo "********"
+  echo "Stopping MapStory Services"
+  echo "********"
+  echo "Stopping tomcat8 service"
+  service tomcat8 stop
+  echo "Stopping rabbitmq-server service"
+  service rabbitmq-server stop
+  echo "Stopping mapstory service"
+  service mapstory stop
+  echo "Stopping httpd service"
+  service httpd stop
+}
+
+ssl(){
+  echo "********"
+  echo "Configuring SSL"
+  echo "********"
+  commonname="$VAR"
+
+  # country
+  country=$(awk '/^\[MAPSTORY\]/{f=1} f==1&&/^country/{print $3;exit}' "${CONFIG}")
+  [ -z "$country" ] || [ ${#country} -ge 3 ] && country="US"
+
+  # state
+  state=$(awk '/^\[MAPSTORY\]/{f=1} f==1&&/^state/{print $3;exit}' "${CONFIG}")
+  [ -z "$state" ] && state="."
+
+  # locality
+  locality=$(awk '/^\[MAPSTORY\]/{f=1} f==1&&/^locality/{print $3;exit}' "${CONFIG}")
+  [ -z "$locality" ] && locality="."
+
+  # organization
+  organization=$(awk '/^\[MAPSTORY\]/{f=1} f==1&&/^organization/{print $3;exit}' "${CONFIG}")
+  [ -z "$organization" ] && organization="."
+
+  # organizationalunit
+  organizationalunit=$(awk '/^\[MAPSTORY\]/{f=1} f==1&&/^organizationalunit/{print $3;exit}' "${CONFIG}")
+  [ -z "$organizationalunit" ] && organizationalunit="."
+
+  # email
+  email=$(awk '/^\[MAPSTORY\]/{f=1} f==1&&/^email/{print $3;exit}' "${CONFIG}")
+  [[ "$email" != ?*@?*.?* ]] && email="admin@mapstory.org"
+
+  [ ! -d /etc/httpd/ssl ] && mkdir -p /etc/httpd/ssl
+  [ -f /etc/httpd/ssl/mapstory.key ] && rm -f /etc/httpd/ssl/mapstory.key
+  [ -f /etc/httpd/ssl/mapstory.crt ] && rm -f /etc/httpd/ssl/mapstory.crt
+  [ -f /etc/httpd/conf.d/ssl.conf ] && mv /etc/httpd/conf.d/ssl.conf /etc/httpd/conf.d/ssl.conf.off
+
+  echo "Generating key and certificate for apache"
+  # CRT and KEY files
+  openssl req -x509 -newkey rsa:2048 -keyout /etc/httpd/ssl/mapstory.key -out /etc/httpd/ssl/mapstory.crt -days 365 -subj "/C=$country/ST=$state/L=$locality/O=$organization/OU=$organizationalunit/CN=$commonname/emailAddress=$email" -nodes
+
+  echo "Importing CRT file into httplib, httplib2 and certifi/requests modules"
+  # Importing CRT into httplib2
+  cat /etc/httpd/ssl/mapstory.crt >> /var/lib/geonode/lib/python2.7/site-packages/httplib2/cacerts.txt
+  # Importing CRT into httplib2
+  cat /etc/httpd/ssl/mapstory.crt >> /etc/pki/tls/certs/ca-bundle.crt
+  # Importing cert into certifi/requests
+  cat /etc/httpd/ssl/mapstory.crt >> /var/lib/geonode/lib/python2.7/site-packages/certifi/cacert.pem
+
+  echo "Attempting to remove previous keystore entry"
+  keytool -delete -alias mapstory -keystore $KEYSTORE -storepass changeit > /dev/null 2>&1
+
+  echo "Importing CRT file into Java Keystore"
+  # Importing DER file in keystore
+  keytool -import -alias mapstory -trustcacerts -noprompt -storepass changeit -keystore $KEYSTORE -file /etc/httpd/ssl/mapstory.crt
+
+  echo "Restarting tomcat8"
+  service tomcat8 restart > /dev/null 2>&1
+  echo "Restarting supervisor"
+  service mapstory restart > /dev/null 2>&1
+  echo "Restarting Apache httpd"
+  service httpd restart > /dev/null 2>&1
+}
+
+initdata(){
+  echo "********"
+  echo "Importing MapStory Fixtures"
+  echo "********"
+  mapstory-django loaddata /var/lib/geonode/geonode/geonode/base/fixtures/initial_data.json
+  mapstory-django loaddata /var/lib/geonode/mastory-geonode/mapstory/fixtures/initial_data.json
+  mapstory-django loaddata $MAPSTORY_ETC/admin.json
+  mapstory-django loaddata $MAPSTORY_ETC/fixture_mapstory.json
+}
+
+case "$1" in
+    init)
+        if [ $OPTIONS -eq 2 ];
+        then
+          if [ -f /etc/mapstory/initialized ];
+          then
+            echo "mapstory has already been initialized"
+          else
+            echo $(date) > /etc/mapstory/initialized
+            service mapstory restart > /dev/null 2>&1
+            ssl
+            database
+            django
+            updateip
+            elastic
+            rabbitmq
+            collectstatic
+            syncdb
+            selinux
+            start_all
+            echo "Waiting 60 seconds for services to start up"
+            sleep 60
+            initdata
+            changepassword
+          fi
+        else
+          echo "Usage: mapstory-config $1 <public domain or ip address>"
+        fi
+        RETVAL=$?
+        ;;
+    database)
+        database
+        RETVAL=$?
+        ;;
+    elastic)
+        elastic
+        RETVAL=$?
+        ;;
+    rabbitmq)
+        rabbitmq
+        RETVAL=$?
+        ;;
+    django)
+        django
+        RETVAL=$?
+        ;;
+    selinux)
+        selinux
+        RETVAL=$?
+        ;;
+    updateip)
+        if [ $OPTIONS -eq 2 ];
+        then
+          updateip
+          start_all
+        else
+          echo "Usage: mapstory-config $1 <public domain or ip address>"
+        fi
+        RETVAL=$?
+        ;;
+    updatelayers)
+        updatelayers
+        RETVAL=$?
+        ;;
+    rebuild_index)
+        rebuild_index
+        RETVAL=$?
+        ;;
+    syncdb)
+        syncdb
+        RETVAL=$?
+        ;;
+    collectstatic)
+        collectstatic
+        RETVAL=$?
+        ;;
+    changepassword)
+        if [ $OPTIONS -eq 2 ];
+        then
+          changepassword
+        else
+          echo "Usage: mapstory-config $1 <username>"
+        fi
+        RETVAL=$?
+        ;;
+    createsuperuser)
+        createsuperuser
+        RETVAL=$?
+        ;;
+    start_all)
+        start_all
+        RETVAL=$?
+        ;;
+    stop_all)
+        stop_all
+        RETVAL=$?
+        ;;
+    initdata)
+        initdata
+        RETVAL=$?
+        ;;
+    ssl)
+        if [ $OPTIONS -eq 2 ];
+        then
+          ssl
+        else
+          echo "Usage: mapstory-config $1 <public domain or ip address>"
+        fi
+        RETVAL=$?
+        ;;
+    *)
+        usage
+        exit 1
+esac
