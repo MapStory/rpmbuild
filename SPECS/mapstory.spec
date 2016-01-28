@@ -87,6 +87,8 @@ Requires:         libtiff
 Requires:         freetype
 Requires:         lcms2
 Requires:         proj
+Requires:         proj-nad
+Requires:         proj-epsg
 Requires:         geos
 Requires:         mapstory-geoserver >= 2.8
 Requires:         rabbitmq-server >= 3.5.6

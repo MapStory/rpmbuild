@@ -302,7 +302,7 @@ ssl(){
 
   echo "Generating key and certificate for apache"
   # CRT and KEY files
-  openssl req -x509 -newkey rsa:2048 -keyout /etc/httpd/ssl/mapstory.key -out /etc/httpd/ssl/mapstory.crt -days 365 -subj "/C=$country/ST=$state/L=$locality/O=$organization/OU=$organizationalunit/CN=$commonname/emailAddress=$email" -nodes
+  openssl req -x509 -sha256 -newkey rsa:2048 -keyout /etc/httpd/ssl/mapstory.key -out /etc/httpd/ssl/mapstory.crt -days 365 -subj "/C=$country/ST=$state/L=$locality/O=$organization/OU=$organizationalunit/CN=$commonname/emailAddress=$email" -nodes
 
   echo "Importing CRT file into httplib, httplib2 and certifi/requests modules"
   # Importing CRT into httplib2
